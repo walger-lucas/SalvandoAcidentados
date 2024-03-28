@@ -20,7 +20,7 @@ def positions_possible(current,actions_res):
     
 
 class Explorer(AbstAgent):
-    def __init__(self, env, config_file, resc):
+    def __init__(self, env, config_file, resc,id,total_ag):
         """ Construtor do agente random on-line
         @param env: a reference to the environment 
         @param config_file: the absolute path to the explorer's config file
@@ -37,9 +37,10 @@ class Explorer(AbstAgent):
         self.map = Map()           # create a map for representing the environment
         self.victims = {}          # a dictionary of found victims: (seq): ((x,y), [<vs>])
                                    # the key is the seq number of the victim,(x,y) the position, <vs> the list of vital signals
-        angle = math.pi/4
-        self.direction = (math.cos(angle),math.sin(angle)) #direction where it will try to go
-        self.distance = math.sqrt(self.TLIM)*1.5/self.COST_LINE
+        self.angle = math.pi*2/total_ag
+        self.id = id
+        self.direction = (math.cos(self.angle*id),math.sin(self.angle*id)) #direction where it will try to go
+        self.distance = math.sqrt(self.TLIM)*2/self.COST_LINE
 
         actions_res = self.check_walls_and_lim()
         # put the current position - the base - in the map
@@ -76,9 +77,9 @@ class Explorer(AbstAgent):
         next_node = self.next_node()
         path,sizeGo = self.a_star(next_node,(self.x,self.y))
         path2, sizeBack = self.a_star(next_node,(0,0))
-        if(sizeGo+sizeBack+self.COST_READ+self.COST_DIAG*2>self.get_rtime()):
+        if(sizeGo+sizeBack+self.COST_READ+self.COST_DIAG*10>self.get_rtime()):
             path, sizeGo = self.a_star((0,0),(self.x,self.y))
-        self.walk_vec += path
+        self.walk_vec = path
         return True
 
     
@@ -155,18 +156,21 @@ class Explorer(AbstAgent):
         
     def heuristica(self,pos):
         cur_pos = (self.x,self.y)
+        #calculo de modificador da distância objetivo a procurar em função da porcentagem de bateria atual
         mod = max(self.get_rtime()/self.TLIM,0)
-        mod = pow(mod,0.9) +0.10
-     
+        mod = pow(mod,1.9) +0.15
+        proj_ort_dist = pos[0]*self.direction[0] + pos[1]*self.direction[1]##calcula o modulo da projecao ortogonal do vetor da posicao atual e da direcao preferida
         length = self.distance*mod
-        dir = (self.direction[0]*length,
-               self.direction[1]*length);
-        heur = distance(pos,dir) ## ALTERAR DEPOIS PARA HEURISTICA DEPENDENDO DO ID DO Explorer
+        #modificador de direção, o quao mais pra sua direção, mais negativo
+        direction_dist = abs(proj_ort_dist-length)
+        radius = distance(pos,(0,0))
+        origin_dist= abs(radius-length)
         dist = distance(pos,cur_pos)
-        if(dist<22):
+        # caso a distancia atual do ponto seja menor que 10, descubra a distância real
+        if(dist<10):
             path, dist = self.a_star(pos,cur_pos)
         
-        return dist+heur
+        return dist*1+origin_dist*0.5 +direction_dist*1
         
 def distance(p1,p2):
     dx = p1[0]-p2[0]
