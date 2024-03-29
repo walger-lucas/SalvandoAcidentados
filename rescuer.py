@@ -46,12 +46,12 @@ class Rescuer(AbstAgent):
         victims' location. The rescuer becomes ACTIVE. From now,
         the deliberate method is called by the environment"""
 
-        print(f"\n\n*** R E S C U E R ***")
+        #print(f"\n\n*** R E S C U E R ***")
         self.map = map
-        print(f"{self.NAME} Map received from the explorer")
-        self.map.draw()
+        #print(f"{self.NAME} Map received from the explorer")
+        #self.map.draw()
 
-        print()
+        #print()
         #print(f"{self.NAME} List of found victims received from the explorer")
         self.victims = victims
 
@@ -64,17 +64,17 @@ class Rescuer(AbstAgent):
         #print(f"{self.NAME} time limit to rescue {self.plan_rtime}")
 
         self.__planner()
-        print(f"{self.NAME} PLAN")
+        #print(f"{self.NAME} PLAN")
         i = 1
         self.plan_x = 0
         self.plan_y = 0
         for a in self.plan:
             self.plan_x += a[0]
             self.plan_y += a[1]
-            print(f"{self.NAME} {i}) dxy=({a[0]}, {a[1]}) vic: a[2] => at({self.plan_x}, {self.plan_y})")
+            #print(f"{self.NAME} {i}) dxy=({a[0]}, {a[1]}) vic: a[2] => at({self.plan_x}, {self.plan_y})")
             i += 1
 
-        print(f"{self.NAME} END OF PLAN")
+        #print(f"{self.NAME} END OF PLAN")
                   
         self.set_state(VS.ACTIVE)
         
@@ -206,14 +206,7 @@ class Rescuer(AbstAgent):
             # check if there is a victim at the current position
             if there_is_vict:
                 rescued = self.first_aid() # True when rescued
-                if rescued:
-                    print(f"{self.NAME} Victim rescued at ({self.x}, {self.y})")
-                else:
-                    print(f"{self.NAME} Plan fail - victim not found at ({self.x}, {self.x})")
-        else:
-            print(f"{self.NAME} Plan fail - walk error - agent at ({self.x}, {self.x})")
-            
-        #input(f"{self.NAME} remaining time: {self.get_rtime()} Tecle enter")
+
 
         return True
 

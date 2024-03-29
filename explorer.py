@@ -6,6 +6,7 @@ from abc import ABC, abstractmethod
 from vs.abstract_agent import AbstAgent
 from vs.constants import VS
 from map import Map
+import time
 
 import heapq
 
@@ -53,6 +54,7 @@ class Explorer(AbstAgent):
     def deliberate(self) -> bool:
         """ The agent chooses the next action. The simulator calls this
         method at each cycle. Must be implemented in every agent"""
+        #stime.sleep(0.1)
         if self.walk_vec:
             ## continue path
             wasted_time = self.get_rtime()
@@ -77,7 +79,7 @@ class Explorer(AbstAgent):
         next_node = self.next_node()
         path,sizeGo = self.a_star(next_node,(self.x,self.y))
         path2, sizeBack = self.a_star(next_node,(0,0))
-        if(sizeGo+sizeBack+self.COST_READ+self.COST_DIAG*10>self.get_rtime()):
+        if(sizeGo+sizeBack+self.COST_READ+self.COST_DIAG*16>self.get_rtime()):
             path, sizeGo = self.a_star((0,0),(self.x,self.y))
         self.walk_vec = path
         return True
@@ -158,7 +160,7 @@ class Explorer(AbstAgent):
         cur_pos = (self.x,self.y)
         #calculo de modificador da distância objetivo a procurar em função da porcentagem de bateria atual
         mod = max(self.get_rtime()/self.TLIM,0)
-        mod = pow(mod,1.9) +0.15
+        mod = pow(mod,1.2)+ 0.1
         proj_ort_dist = pos[0]*self.direction[0] + pos[1]*self.direction[1]##calcula o modulo da projecao ortogonal do vetor da posicao atual e da direcao preferida
         length = self.distance*mod
         #modificador de direção, o quao mais pra sua direção, mais negativo
@@ -170,7 +172,7 @@ class Explorer(AbstAgent):
         if(dist<10):
             path, dist = self.a_star(pos,cur_pos)
         
-        return dist*1+origin_dist*0.5 +direction_dist*1
+        return dist*1+origin_dist*0.3 +direction_dist*0.7
         
 def distance(p1,p2):
     dx = p1[0]-p2[0]
