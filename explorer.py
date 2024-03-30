@@ -7,6 +7,7 @@ from vs.abstract_agent import AbstAgent
 from vs.constants import VS
 from map import Map
 import time
+import center
 
 import heapq
 
@@ -21,7 +22,7 @@ def positions_possible(current,actions_res):
     
 
 class Explorer(AbstAgent):
-    def __init__(self, env, config_file, resc,id,total_ag):
+    def __init__(self, env, config_file, resc,id,total_ag, center):
         """ Construtor do agente random on-line
         @param env: a reference to the environment 
         @param config_file: the absolute path to the explorer's config file
@@ -29,6 +30,8 @@ class Explorer(AbstAgent):
         """
 
         super().__init__(env, config_file)
+        self.center = center
+        center.explorers_count += 1
         self.walk_vec = []
         self.to_explore = []
         self.set_state(VS.ACTIVE)  # explorer is active since the begin
@@ -68,8 +71,16 @@ class Explorer(AbstAgent):
                 ##came back to start
                 if(self.x==0 and self.y==0):
                     print(f"{self.NAME}: rtime {self.get_rtime()}, invoking the rescuer")
+                    print("\n\n\n\nMAPA:")
+                    self.map.draw()
                     #input(f"{self.NAME}: type [ENTER] to proceed")
-                    self.resc.go_save_victims(self.map, self.victims)
+                    self.center.rescuers_count += 1
+                    self.center.receive_info(self.map, self.victims)
+
+                    if self.center.is_done():
+
+
+                        self.resc.go_save_victims(self.center.map, self.center.victims)
                     return False
                 else:
                     self.explore_node(operation,wasted_time)

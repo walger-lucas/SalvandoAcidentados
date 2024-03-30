@@ -64,4 +64,21 @@ class Map:
             print(row)
 
 
-    
+def mix_maps(map1, map2):
+    """ Mix two maps. The result is a new map containing the union of the keys from map1 and map2.
+    If a key is in both maps, the values are summed up.
+    @param map1: the first map
+    @param map2: the second map
+    @return: a new map"""
+    new_map = Map()
+    if map1 is None:
+        return map2
+    if map2 is None:
+        return map1
+    keys1 = map1.map_data.keys()
+    keys2 = map2.map_data.keys()
+    for key in keys1:
+        new_map.add(key, *map1.get(key))
+    for key in keys2:
+        if key not in keys1:
+            new_map.add(key, *map2.get(key))

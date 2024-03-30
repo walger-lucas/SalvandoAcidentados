@@ -9,6 +9,9 @@ from rescuer import Rescuer
 ## from rescuer import Rescuer
 from enum import Enum
 
+
+from center import Center
+
 def main(data_folder_name):
    
     # Set the path to config files and data files for the environment
@@ -25,12 +28,12 @@ def main(data_folder_name):
     
     # Instantiate agents rescuer and explorer
     resc = Rescuer(env, rescuer_file)
-
+    center = Center()
     # Explorer needs to know rescuer to send the map
     # that's why rescuer is instatiated before
     max = 4
     for i in range(0,max):
-        Explorer(env, explorer_file, resc,i,max)
+        Explorer(env, explorer_file, resc,i,max, center)
 
     # Run the environment simulator
     env.run()
@@ -43,6 +46,6 @@ if __name__ == '__main__':
     if len(sys.argv) > 1:
         data_folder_name = sys.argv[1]
     else:
-        data_folder_name = os.path.join("datasets", "data_132v_100x80")
+        data_folder_name = os.path.join("datasets", "data_225v_100x80")
         
     main(data_folder_name)
