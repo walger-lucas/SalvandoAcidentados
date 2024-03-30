@@ -9,6 +9,7 @@ class Center:
         self.victims = {}
         self.nb_victims = 0
         self.rescuers_count = 0
+        self.rescuers_slices = 0
         self.explorers_count = 0
 
     def receive_info(self, exp_map: Map, victims: dict):
@@ -28,15 +29,5 @@ class Center:
             if victims[victim][0] not in self.victims.values():
                 self.nb_victims += 1
                 self.victims[self.nb_victims] = victims[victim]
-                
-    def process_victims_clustering(self):
-        x = []
-        y = []
-        clusters = []
-        for victim in self.victims:
-            #victim[0] = (x,y) é uma string
-            x.append(victim[0][0])
-            y.append(victim[0][1])
-        #criando clusters
 
             

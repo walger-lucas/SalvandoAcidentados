@@ -71,16 +71,20 @@ class Explorer(AbstAgent):
                 ##came back to start
                 if(self.x==0 and self.y==0):
                     print(f"{self.NAME}: rtime {self.get_rtime()}, invoking the rescuer")
-                    print("\n\n\n\nMAPA:")
-                    self.map.draw()
+
                     #input(f"{self.NAME}: type [ENTER] to proceed")
+
+
+                    #o explorador terminou sua tarefa, pode recrutar um salvador
                     self.center.rescuers_count += 1
+                    #enviando informação para central
                     self.center.receive_info(self.map, self.victims)
 
                     if self.center.is_done():
-
-
+                        #central já processou tudo, o salvador pode ir com o mapa unificado
                         self.resc.go_save_victims(self.center.map, self.center.victims)
+
+
                     return False
                 else:
                     self.explore_node(operation,wasted_time)
