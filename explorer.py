@@ -81,6 +81,9 @@ class Explorer(AbstAgent):
                     self.center.receive_info(self.map, self.victims)
 
                     if self.center.is_done():
+                        if self.center.kmeans_printed is False:
+                            self.center.kmeans_printed = True
+                            self.center.kmeans()
                         #central já processou tudo, o salvador pode ir com o mapa unificado
                         self.resc.go_save_victims(self.center.map, self.center.victims)
 
