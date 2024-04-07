@@ -82,3 +82,4 @@ def mix_maps(map1, map2):
     for key in keys2:
         if key not in keys1:
             new_map.add(key, *map2.get(key))
+    return new_map
