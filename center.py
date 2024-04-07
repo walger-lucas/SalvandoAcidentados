@@ -2,7 +2,6 @@
 from map import Map, mix_maps
 import random
 import matplotlib.pyplot as plt
-from vs.constants import VS
 
 #possui um mapa de informações que é atualizado a cada passo
 #possui uma função para receber as informações dos exploradores
@@ -33,6 +32,15 @@ class Center:
         else:
             return False
 
+    def get_min_max_x_y(self):
+        if self.map is None or self.map.map_data == {}:
+            return None, None, None, None
+        min_x = min(key[0] for key in self.map.map_data.keys())
+        max_x = max(key[0] for key in self.map.map_data.keys())
+        min_y = min(key[1] for key in self.map.map_data.keys())
+        max_y = max(key[1] for key in self.map.map_data.keys())
+        return min_x, max_x, min_y, max_y
+    
 
     def add_victims(self, victims):
         for victim in victims:  # Aqui, 'victim' é um id 15: ((7, 0), [15, 18.371217, 1.645462, -4.333333, 185.921773, 7.973052]), 7: ((13, -10), [7, 17.621876, 8.170742, 4.666667, 135.730461, 18.979636]), ...
@@ -40,6 +48,7 @@ class Center:
             if victim not in self.victims.keys():
                 self.nb_victims += 1
                 self.victims[victim] = victims[victim]
+        self.victims = dict(sorted(self.victims.items()))
 
 
 
@@ -48,7 +57,7 @@ class Center:
         plt.figure(figsize=(19.20, 10.80), dpi=100)
         for j in range(len(groups)):
             for i in range(len(groups[j])):
-                plt.scatter(groups[j][i][0], groups[j][i][1], color=centroids[j][2])
+                plt.scatter(self.victims[groups[j][i]][0][0], self.victims[groups[j][i]][0][1], color=centroids[j][2])
 
         # Plota centroides
         for i, centroid in enumerate(centroids):
@@ -58,12 +67,11 @@ class Center:
         # Marca o ponto (0, 0)
         plt.axvline(x=0, color='k', linestyle='--', linewidth=1)  # Linha vertical
         plt.axhline(y=0, color='k', linestyle='--', linewidth=1)  # Linha horizontal
-        if self.map is None or self.map.map_data == {} or self.victims == 0:
-            return None, None
-        min_x = min(key[0] for key in self.map.map_data.keys())
-        max_x = max(key[0] for key in self.map.map_data.keys())
-        min_y = min(key[1] for key in self.map.map_data.keys())
-        max_y = max(key[1] for key in self.map.map_data.keys())
+        
+        min_x, max_x, min_y, max_y = self.get_min_max_x_y()
+        if min_x is None or max_x is None or min_y is None or max_y is None:
+            return
+        
         # Define os intervalos dos ticks nos eixos x e y para cada unidade
 
         plt.xticks(range(min_x, max_x))
@@ -79,28 +87,6 @@ class Center:
         plt.savefig("clusters.png")  # dpi ajustado para uma imagem 1920x1080
         #plt.show()  # Mostra o gráfico
 
-
-
-    def get_victims_pos(self):
-        if self.map is None or self.map.map_data == {} or self.victims == 0:
-                    return None, None, None
-        min_x = min(key[0] for key in self.map.map_data.keys())
-        max_x = max(key[0] for key in self.map.map_data.keys())
-        min_y = min(key[1] for key in self.map.map_data.keys())
-        max_y = max(key[1] for key in self.map.map_data.keys())
-
-        victims_pos_x = []
-        victims_pos_y = []
-        victims_id = []
-        for y in range(min_y, max_y + 1):
-            for x in range(min_x, max_x + 1):
-                item = self.map.get((x, y))
-                if item:
-                    if item[1] != VS.NO_VICTIM:
-                        victims_pos_x.append(x)
-                        victims_pos_y.append(-y)
-                        victims_id.append(item[1])
-        return victims_pos_x, victims_pos_y, victims_id
     
     def get_centroids(self):
         k = self.rescuers_count
@@ -108,12 +94,10 @@ class Center:
         poskx = []
         posky = []
         centroids = []
-        if self.map is None or self.map.map_data == {} or self.victims == 0:
-            return
-        min_x = min(key[0] for key in self.map.map_data.keys())
-        max_x = max(key[0] for key in self.map.map_data.keys())
-        min_y = min(key[1] for key in self.map.map_data.keys())
-        max_y = max(key[1] for key in self.map.map_data.keys())
+        
+        min_x, max_x, min_y, max_y = self.get_min_max_x_y()
+        if min_x is None or max_x is None or min_y is None or max_y is None:
+            return None
         for i in range(k):
             poskx.append(random.randint(min_x,max_x))
             posky.append(random.randint(min_y,max_y))
@@ -130,8 +114,8 @@ class Center:
             x = 0
             y = 0
             for j in range(len(groups[i])):
-                x += groups[i][j][0]
-                y += groups[i][j][1]
+                x += self.victims[groups[i][j]][0][0]
+                y += self.victims[groups[i][j]][0][1]
 
             x = x/len(groups[i])
             y = y/len(groups[i])
@@ -139,33 +123,34 @@ class Center:
         return centroids
     
 
-    def update_groups(self, victims_pos_x, victims_pos_y, centroids, victims_id):
+    def update_groups(self, centroids):
         groups = []
+    
         for i in range(len(centroids)):
             groups.append([])
 
-        for i in range(len(victims_pos_x)):
-            for j in range(len(centroids)):
-                dist = ((victims_pos_x[i] - centroids[j][0])**2 + (victims_pos_y[i] - centroids[j][1])**2)**0.5
-                if j == 0:
+        for victim in self.victims:
+            min_dist = 99999
+            group = -1
+            for centroid in range(len(centroids)):
+               
+                dist = ((self.victims[victim][0][0] - centroids[centroid][0])**2 + (self.victims[victim][0][1] - centroids[centroid][1])**2)**0.5
+
+                if dist < min_dist:
                     min_dist = dist
-                    group = j
-                elif dist < min_dist:
-                    min_dist = dist
-                    group = j
-            groups[group].append((victims_pos_x[i], victims_pos_y[i], victims_id[i]))
+                    group = centroid
+
+            groups[group].append(victim)
         return groups
     
     def get_max_diff_dist_victims(self, groups):
-        len_group = []
-        for i in range(len(groups)):
-            len_group.append(len(groups[i]))
+        
         dist_victims = []
-        for k in range(len(len_group)):
+        for k in range(len(groups)):
             dist_victims.append(0)
             for i in range(len(groups[k])):
                 for j in range(i+1, len(groups[k])):
-                    dist_victims[k] += ((groups[k][i][0] - groups[k][j][0])**2 + (groups[k][i][1] - groups[k][j][1])**2)**0.5
+                    dist_victims[k] += ((self.victims[groups[k][i]][0][0] - self.victims[groups[k][j]][0][0])**2 + (self.victims[groups[k][i]][0][1] - self.victims[groups[k][j]][0][1])**2)**0.5
         total_dist = 0
 
         for i in range(len(dist_victims)):
@@ -239,6 +224,7 @@ class Center:
                 vital_signals_value += 25
             else:
                 vital_signals_value += 0
+
             if vital_signals_value/5 <=25:
                 vital_signals_mapped[k] = (vital_signals_value/5, 4)
             elif vital_signals_value/5 <=50:
@@ -251,10 +237,6 @@ class Center:
 
                 
     def kmeans(self):
-        victims_pos_x, victims_pos_y, victims_id = self.get_victims_pos()
-        if victims_pos_x is None or victims_pos_y is None or len(victims_pos_x) != len(victims_pos_y) or victims_id is None:
-            print("No victims found")
-            return
         
         centroids = self.get_centroids()
         if centroids is None:
@@ -265,11 +247,14 @@ class Center:
             groups.append([])
         old_centroids = []
 
-        groups = self.update_groups(victims_pos_x, victims_pos_y, centroids, victims_id)
+        print(f'Centroids: {centroids}')
+        print(f'Victims: {self.victims}')
+
+        groups = self.update_groups(centroids)
         centroids = self.update_centroids(centroids, groups)
         while(centroids != old_centroids):
             old_centroids = centroids
-            groups = self.update_groups(victims_pos_x, victims_pos_y, centroids, victims_id)
+            groups = self.update_groups(centroids)
             centroids = self.update_centroids(centroids, groups)
 
         total, diff_dist_victims = self.get_max_diff_dist_victims(groups)
@@ -278,7 +263,7 @@ class Center:
             old_centroids = []
             while(centroids != old_centroids):
                 old_centroids = centroids
-                groups = self.update_groups(victims_pos_x, victims_pos_y, centroids, victims_id)
+                groups = self.update_groups(centroids)
                 centroids = self.update_centroids(centroids, groups)
             total, diff_dist_victims = self.get_max_diff_dist_victims(groups)
 
@@ -288,22 +273,15 @@ class Center:
         vitals_signals_mapped = self.mapping_vital_signals()
         with open('groups.txt', 'w') as f:
             for i in range(len(groups)):
-                groups[i] = sorted(groups[i], key=lambda x: x[2])
-                
+                #ordenando groups pelo id da vítima
+                groups[i].sort()             
                 f.write(f'Group {i+1}\n')
                 for j in range(len(groups[i])):
-                        x = groups[i][j][0]
-                        y = groups[i][j][1]
-                        id = groups[i][j][2]
-                        #procurando a vitima no dicionario de vitimas
-                        #[((x,y), <vs>), ...]
-                        score = None
-                        label = None
-                        for k in vitals_signals_mapped:
-                            if k == id:
-                                score = vitals_signals_mapped[k][0]
-                                label = vitals_signals_mapped[k][1]
-                                break
+                        x = self.victims[groups[i][j]][0][0]
+                        y = self.victims[groups[i][j]][0][1]
+                        id = groups[i][j]
+                        score = vitals_signals_mapped[id][0]
+                        label = vitals_signals_mapped[id][1]
                         f.write(f'{id}, {x}, {y}, {score}, {label}\n')
         self.plot_clusters(centroids, groups)
         
