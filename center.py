@@ -9,9 +9,7 @@ class Center:
     def __init__(self):
         self.map = Map()
         self.victims = {}
-        self.nb_victims = 0
         self.rescuers_count = 0
-        self.rescuers_slices = 0
         self.explorers_count = 0
         self.kmeans_printed = False
 
@@ -43,10 +41,9 @@ class Center:
     
 
     def add_victims(self, victims):
-        for victim in victims:  # Aqui, 'victim' é um id 15: ((7, 0), [15, 18.371217, 1.645462, -4.333333, 185.921773, 7.973052]), 7: ((13, -10), [7, 17.621876, 8.170742, 4.666667, 135.730461, 18.979636]), ...
+        for victim in victims: 
             # Verifica se a vítima já existe
             if victim not in self.victims.keys():
-                self.nb_victims += 1
                 self.victims[victim] = victims[victim]
         self.victims = dict(sorted(self.victims.items()))
 
@@ -169,6 +166,7 @@ class Center:
             #𝑓𝑅𝑒𝑠: frequência respiratória
             #making the mapping of the vital signals to a scale of 0 to 100 0 is the worst and 100 is the best
             vital_signals_value = 0
+
             #pressão diastólica
             if vital_signals[1] < 60:
                 vital_signals_value += 0
@@ -180,6 +178,7 @@ class Center:
                 vital_signals_value += 75
             else:
                 vital_signals_value += 100
+
             #pressão sistólica
             if vital_signals[2] < 90:
                 vital_signals_value += 0
@@ -191,6 +190,7 @@ class Center:
                 vital_signals_value += 75
             else:
                 vital_signals_value += 100
+
             #quantidade de sangue que passa por uma área em um determinado tempo
             if vital_signals[3] < 4:
                 vital_signals_value += 0
@@ -202,6 +202,7 @@ class Center:
                 vital_signals_value += 75
             else:
                 vital_signals_value += 100
+
             #pulso
             if vital_signals[4] < 50:
                 vital_signals_value += 25
@@ -213,6 +214,7 @@ class Center:
                 vital_signals_value += 75
             else:
                 vital_signals_value += 100
+
             #frequência respiratória
             if vital_signals[5] < 12:
                 vital_signals_value += 100
@@ -225,6 +227,7 @@ class Center:
             else:
                 vital_signals_value += 0
 
+            
             if vital_signals_value/5 <=25:
                 vital_signals_mapped[k] = (vital_signals_value/5, 4)
             elif vital_signals_value/5 <=50:
@@ -234,6 +237,24 @@ class Center:
             else:
                 vital_signals_mapped[k] = (vital_signals_value/5, 1)
         return vital_signals_mapped 
+
+
+    def save_groups(self, groups):
+    #saving the groups in format 𝑖𝑑, 𝑥, 𝑦, gravidade, label de criticidade
+        vitals_signals_mapped = self.mapping_vital_signals()
+        with open('groups.csv', 'w') as f:
+            for i in range(len(groups)):
+                #ordenando groups pelo id da vítima
+                groups[i].sort()             
+                f.write(f'Group {i+1}\n')
+                for j in range(len(groups[i])):
+                        x = self.victims[groups[i][j]][0][0]
+                        y = self.victims[groups[i][j]][0][1]
+                        id = groups[i][j]
+                        score = vitals_signals_mapped[id][0]
+                        label = vitals_signals_mapped[id][1]
+                        f.write(f'{id}, {x}, {y}, {score}, {label}\n')
+                
 
                 
     def kmeans(self):
@@ -246,9 +267,6 @@ class Center:
         for i in range(len(centroids)):
             groups.append([])
         old_centroids = []
-
-        print(f'Centroids: {centroids}')
-        print(f'Victims: {self.victims}')
 
         groups = self.update_groups(centroids)
         centroids = self.update_centroids(centroids, groups)
@@ -267,22 +285,7 @@ class Center:
                 centroids = self.update_centroids(centroids, groups)
             total, diff_dist_victims = self.get_max_diff_dist_victims(groups)
 
-
-
-        #saving the groups in format 𝑖𝑑, 𝑥, 𝑦, gravidade, label de criticidade
-        vitals_signals_mapped = self.mapping_vital_signals()
-        with open('groups.txt', 'w') as f:
-            for i in range(len(groups)):
-                #ordenando groups pelo id da vítima
-                groups[i].sort()             
-                f.write(f'Group {i+1}\n')
-                for j in range(len(groups[i])):
-                        x = self.victims[groups[i][j]][0][0]
-                        y = self.victims[groups[i][j]][0][1]
-                        id = groups[i][j]
-                        score = vitals_signals_mapped[id][0]
-                        label = vitals_signals_mapped[id][1]
-                        f.write(f'{id}, {x}, {y}, {score}, {label}\n')
+        self.save_groups(groups)
         self.plot_clusters(centroids, groups)
         
 
