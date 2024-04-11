@@ -2,9 +2,11 @@
 from map import Map, mix_maps
 import random
 import matplotlib.pyplot as plt
-
+import os
+import shutil
 #possui um mapa de informações que é atualizado a cada passo
 #possui uma função para receber as informações dos exploradores
+
 class Center:
     def __init__(self):
         self.map = Map()
@@ -12,6 +14,7 @@ class Center:
         self.rescuers_count = 0
         self.explorers_count = 0
         self.kmeans_printed = False
+        self.path = ""
 
     def receive_info(self, exp_map: Map, victims: dict):
         self.map = mix_maps(self.map, exp_map)
@@ -50,6 +53,7 @@ class Center:
 
 
     def plot_clusters(self, centroids, groups):
+        
         # Plota pontos dos grupos
         plt.figure(figsize=(19.20, 10.80), dpi=100)
         for j in range(len(groups)):
@@ -64,15 +68,14 @@ class Center:
         # Marca o ponto (0, 0)
         plt.axvline(x=0, color='k', linestyle='--', linewidth=1)  # Linha vertical
         plt.axhline(y=0, color='k', linestyle='--', linewidth=1)  # Linha horizontal
-        
+
         min_x, max_x, min_y, max_y = self.get_min_max_x_y()
         if min_x is None or max_x is None or min_y is None or max_y is None:
             return
-        
-        # Define os intervalos dos ticks nos eixos x e y para cada unidade
 
+        # Define os intervalos dos ticks nos eixos x e y para cada unidade
         plt.xticks(range(min_x, max_x))
-        plt.yticks(range(-max_y, -min_y))
+        plt.yticks(range(min_y, max_y + 1))  # Ajustado para os valores de y corretos
 
         # Adiciona a grade
         plt.grid(True)
@@ -81,8 +84,16 @@ class Center:
         plt.xlabel("Pos x")
         plt.ylabel("Pos y")
         plt.title('Clusters')
-        plt.savefig("clusters.png")  # dpi ajustado para uma imagem 1920x1080
+        
+        # Inverte o eixo y
+        plt.gca().invert_yaxis()
+        try:
+            plt.savefig(f"clusters_{self.path}/clusters.png")  # dpi ajustado para uma imagem 1920x1080
+        except OSError as error:
+            print(error)
+
         #plt.show()  # Mostra o gráfico
+
 
     
     def get_centroids(self):
@@ -242,11 +253,18 @@ class Center:
     def save_groups(self, groups):
     #saving the groups in format 𝑖𝑑, 𝑥, 𝑦, gravidade, label de criticidade
         vitals_signals_mapped = self.mapping_vital_signals()
-        with open('groups.csv', 'w') as f:
-            for i in range(len(groups)):
+        try:
+            os.mkdir(f'clusters_{self.path}')
+        except OSError as _:
+            if os.path.exists(f'clusters_{self.path}'):
+                shutil.rmtree(f'clusters_{self.path}')
+                os.mkdir(f'clusters_{self.path}')
+        for i in range(len(groups)):
+
+            with open(f'clusters_{self.path}/cluster{i+1}.txt', 'w') as f:
+                f.write('id, x, y, grav, label\n')
                 #ordenando groups pelo id da vítima
                 groups[i].sort()             
-                f.write(f'Group {i+1}\n')
                 for j in range(len(groups[i])):
                         x = self.victims[groups[i][j]][0][0]
                         y = self.victims[groups[i][j]][0][1]
