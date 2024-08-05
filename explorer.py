@@ -1,8 +1,5 @@
-import sys
-import os
-import random
+
 import math
-from abc import ABC, abstractmethod
 from vs.abstract_agent import AbstAgent
 from vs.constants import VS
 from map import Map
@@ -12,7 +9,7 @@ from auxiliary import a_star,positions_possible,distance
 import heapq
 
 class Explorer(AbstAgent):
-    def __init__(self, env, config_file, resc,id,total_ag):
+    def __init__(self, env, config_file, resc,id,total_ag, center):
         """ Construtor do agente random on-line
         @param env: a reference to the environment 
         @param config_file: the absolute path to the explorer's config file
@@ -20,6 +17,8 @@ class Explorer(AbstAgent):
         """
 
         super().__init__(env, config_file)
+        self.center = center
+        center.explorers_count += 1
         self.walk_vec = []
         self.to_explore = []
         self.set_state(VS.ACTIVE)  # explorer is active since the begin
@@ -59,8 +58,23 @@ class Explorer(AbstAgent):
                 ##came back to start
                 if(self.x==0 and self.y==0):
                     print(f"{self.NAME}: rtime {self.get_rtime()}, invoking the rescuer")
+
                     #input(f"{self.NAME}: type [ENTER] to proceed")
-                    self.resc.go_save_victims(self.map, self.victims)
+
+
+                    #o explorador terminou sua tarefa, pode recrutar um salvador
+                    self.center.rescuers_count += 1
+                    #enviando informação para central
+                    self.center.receive_info(self.map, self.victims)
+
+                    if self.center.is_done():
+                        self.resc.go_save_victims(self.center.map, self.center.victims)
+                        if self.center.kmeans_printed is False:
+                            self.center.kmeans_printed = True
+                            self.center.kmeans()
+                        #central já processou tudo, o salvador pode ir com o mapa unificado
+
+
                     return False
                 else:
                     self.explore_node(operation,wasted_time)

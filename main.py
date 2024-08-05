@@ -1,13 +1,19 @@
+#!./venv/bin/python3
 import sys
 import os
-import time
 
 ## importa classes
 from vs.environment import Env
 from explorer import Explorer
 from rescuer import Rescuer
 ## from rescuer import Rescuer
-from enum import Enum
+
+
+from center import Center
+
+path = "data_225v_100x80"
+
+
 
 def main(data_folder_name):
    
@@ -25,13 +31,15 @@ def main(data_folder_name):
     
     # Instantiate agents rescuer and explorer
     resc = Rescuer(env, rescuer_file)
-
+    center = Center()
+    center.path = path
     # Explorer needs to know rescuer to send the map
     # that's why rescuer is instatiated before
     max = 4
     for i in range(0,max):
-        Explorer(env, explorer_file, resc,i,max)
+        Explorer(env, explorer_file, resc, i, max, center)
 
+    print(f"Explorers: {center.explorers_count}")
     # Run the environment simulator
     env.run()
     
@@ -43,6 +51,6 @@ if __name__ == '__main__':
     if len(sys.argv) > 1:
         data_folder_name = sys.argv[1]
     else:
-        data_folder_name = os.path.join("datasets", "data_132v_100x80")
+        data_folder_name = os.path.join("datasets", path)
         
     main(data_folder_name)
