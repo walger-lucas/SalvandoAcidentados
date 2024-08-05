@@ -7,18 +7,9 @@ from vs.abstract_agent import AbstAgent
 from vs.constants import VS
 from map import Map
 import time
+from auxiliary import a_star,positions_possible,distance
 
 import heapq
-
-def positions_possible(current,actions_res):
-    i = 0
-    actions = []
-    while i<8:
-        if actions_res[i] == VS.CLEAR:
-            actions.append((current[0] + Explorer.AC_INCR[i][0],current[1] + Explorer.AC_INCR[i][1]))
-        i+=1
-    return actions
-    
 
 class Explorer(AbstAgent):
     def __init__(self, env, config_file, resc,id,total_ag):
@@ -77,10 +68,10 @@ class Explorer(AbstAgent):
                 return True
         ## deliberar caminho
         next_node = self.next_node()
-        path,sizeGo = self.a_star(next_node,(self.x,self.y))
-        path2, sizeBack = self.a_star(next_node,(0,0))
+        path,sizeGo = a_star(self,self.map,next_node,(self.x,self.y))
+        _, sizeBack = a_star(self,self.map,next_node,(0,0))
         if(sizeGo+sizeBack+self.COST_READ+self.COST_DIAG*16>self.get_rtime()):
-            path, sizeGo = self.a_star((0,0),(self.x,self.y))
+            path, sizeGo = a_star(self,self.map,(0,0),(self.x,self.y))
         self.walk_vec = path
         return True
 
@@ -98,47 +89,6 @@ class Explorer(AbstAgent):
             return min[1]
         else:
             return (0,0)
-    
-
-    
-    def a_star(self, posf,posi):
-        path = []
-        last_node = {}
-        g_score = {}
-        f_score = {}
-        g_score[posi]=0
-        f_score[posi]= distance(posf,posi)
-        queue = [(0,posi)] #heap disfarcado
-        while queue:
-            cur_f, cur_node = heapq.heappop(queue)
-            if cur_node == posf:
-                break
-            for p in positions_possible(cur_node,self.map.get(cur_node)[2]):
-                weight = self.COST_LINE
-                dp = (p[0]-cur_node[0],p[1]-cur_node[1])
-                if(dp[0]!=0 and dp[1]!=0):
-                    weight = self.COST_DIAG
-                ## only allow access through known map
-                ground = 1.0
-                if self.map.in_map(p):
-                    ground = self.map.get(p)[0]
-                elif p != posf:
-                    continue
-
-                temp_g = g_score[cur_node] + weight*ground
-                if(p not in g_score.keys() or g_score[p]> temp_g ):
-                    g_score[p] = temp_g
-                    f_score[p] = g_score[p]+distance(p,posf)
-                    last_node[p] = cur_node
-                    heapq.heappush(queue,(f_score[p],p))
-        cur_pos = posf
-        while cur_pos != posi:
-            next_pos = last_node[cur_pos]
-            path.append((cur_pos[0]-next_pos[0],cur_pos[1]-next_pos[1])) ## sets direction
-            cur_pos = next_pos
-        #path is inverted
-        return path, f_score[posf]
-
 
     def explore_node(self,operation,wasted_time):
         cost = wasted_time/self.COST_LINE
@@ -170,14 +120,9 @@ class Explorer(AbstAgent):
         dist = distance(pos,cur_pos)
         # caso a distancia atual do ponto seja menor que 10, descubra a distância real
         if(dist<10):
-            path, dist = self.a_star(pos,cur_pos)
+            path, dist = a_star(self,self.map,pos,cur_pos)
         
         return dist*1+origin_dist*0.3 +direction_dist*0.7
-        
-def distance(p1,p2):
-    dx = p1[0]-p2[0]
-    dy = p1[1]-p2[1]
-    return math.sqrt(dx*dx+dy*dy)
 
 
 
