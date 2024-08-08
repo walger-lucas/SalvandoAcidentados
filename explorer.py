@@ -3,13 +3,12 @@ import math
 from vs.abstract_agent import AbstAgent
 from vs.constants import VS
 from map import Map
-import time
 from auxiliary import a_star,positions_possible,distance
-
-import heapq
+from sequencing import sequence
+from center import Center
 
 class Explorer(AbstAgent):
-    def __init__(self, env, config_file, resc,id,total_ag, center):
+    def __init__(self, env, config_file,id,total_ag, center):
         """ Construtor do agente random on-line
         @param env: a reference to the environment 
         @param config_file: the absolute path to the explorer's config file
@@ -17,12 +16,12 @@ class Explorer(AbstAgent):
         """
 
         super().__init__(env, config_file)
-        self.center = center
+        self.center:Center = center
         center.explorers_count += 1
+        self.come_back = False
         self.walk_vec = []
         self.to_explore = []
-        self.set_state(VS.ACTIVE)  # explorer is active since the begin
-        self.resc = resc           # reference to the rescuer agent
+        self.set_state(VS.ACTIVE)  # explorer is active since the begin          # reference to the rescuer agent
         self.x = 0                 # current x position relative to the origin 0
         self.y = 0                 # current y position relative to the origin 0
         self.map = Map()           # create a map for representing the environment
@@ -54,41 +53,32 @@ class Explorer(AbstAgent):
             self.y += operation[1]
             wasted_time -= self.get_rtime() 
             ## path ended
-            if self.walk_vec == []:
+            if self.walk_vec==[]:
                 ##came back to start
                 if(self.x==0 and self.y==0):
-                    print(f"{self.NAME}: rtime {self.get_rtime()}, invoking the rescuer")
-
-                    #input(f"{self.NAME}: type [ENTER] to proceed")
-
-
-                    #o explorador terminou sua tarefa, pode recrutar um salvador
-                    self.center.rescuers_count += 1
-                    #enviando informação para central
-                    self.center.receive_info(self.map, self.victims)
-
-                    if self.center.is_done():
-                        self.resc.go_save_victims(self.center.map, self.center.victims)
-                        if self.center.kmeans_printed is False:
-                            self.center.kmeans_printed = True
-                            self.center.kmeans()
-                        #central já processou tudo, o salvador pode ir com o mapa unificado
-
-
+                    self.finish_run()
                     return False
                 else:
                     self.explore_node(operation,wasted_time)
             else:
                 return True
+        if(self.x==0 and self.y==0 and self.come_back ==True):
+            self.finish_run()
+            return False
         ## deliberar caminho
         next_node = self.next_node()
         path,sizeGo = a_star(self,self.map,next_node,(self.x,self.y))
         _, sizeBack = a_star(self,self.map,next_node,(0,0))
-        if(sizeGo+sizeBack+self.COST_READ+self.COST_DIAG*16>self.get_rtime()):
+        if(sizeGo+sizeBack+self.COST_READ+self.COST_DIAG*30>self.get_rtime()):
             path, sizeGo = a_star(self,self.map,(0,0),(self.x,self.y))
+            self.come_back = True
         self.walk_vec = path
         return True
 
+    def finish_run(self):
+        print(f"{self.NAME}: rtime {self.get_rtime()}")
+        #enviando informação para central
+        self.center.receive_info(self.map,self.victims)
     
     def next_node(self) -> tuple[int,int]:
         if self.to_explore:

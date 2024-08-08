@@ -18,7 +18,7 @@ def distance(p1,p2):
     dy = p1[1]-p2[1]
     return math.sqrt(dx*dx+dy*dy)
 
-def a_star(agent:AbstAgent,map:Map, posf,posi):
+def a_star(agent:AbstAgent,map, posf:tuple[int,int],posi:tuple[int,int]):
         path = []
         last_node = {}
         g_score = {}

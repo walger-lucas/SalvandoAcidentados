@@ -4,6 +4,8 @@ import random
 import matplotlib.pyplot as plt
 import os
 import shutil
+from rescuer import Rescuer
+from sequencing import sequence
 #possui um mapa de informações que é atualizado a cada passo
 #possui uma função para receber as informações dos exploradores
 
@@ -11,7 +13,7 @@ class Center:
     def __init__(self):
         self.map = Map()
         self.victims = {}
-        self.rescuers_count = 0
+        self.rescuers = []
         self.explorers_count = 0
         self.kmeans_printed = False
         self.path = ""
@@ -19,10 +21,35 @@ class Center:
     def receive_info(self, exp_map: Map, victims: dict):
         self.map = mix_maps(self.map, exp_map)
         self.add_victims(victims)
-        self.explorers_count -= 1
+        self.explorers_count-=1
         print("Center received info from an explorer")
+        if self._is_done():
+                if self.kmeans_printed is False:
+                    self.kmeans_printed = True
+                    groups =self.kmeans()
+                    for group in groups:
+                        rescuer:Rescuer = self.rescuers.pop()
+                        path = sequence(self.find_gravity(group),rescuer,self.victims,self.map)
+                        print(path)
+                        rescuer.go_save_victims(self.map,path)
 
-    def is_done(self):
+    def add_rescuer(self,resc:Rescuer):
+        if resc not in self.rescuers:
+            self.rescuers.append(resc)
+        
+
+
+    def find_gravity(self,group):
+        gravity_group = []
+        for victim in group:
+            gravity_group.append((victim,0)) #set all to gravity 0
+        return gravity_group
+
+
+
+            
+
+    def _is_done(self):
         if self.explorers_count == 0:
             print("\n\nCenter is done\n\n")
             if self.map is None or self.map.map_data == {}:
@@ -97,7 +124,7 @@ class Center:
 
     
     def get_centroids(self):
-        k = self.rescuers_count
+        k = len(self.rescuers)
         colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
         poskx = []
         posky = []
@@ -280,7 +307,7 @@ class Center:
         centroids = self.get_centroids()
         if centroids is None:
             print("No centroids found")
-            return
+            return []
         groups = []
         for i in range(len(centroids)):
             groups.append([])
@@ -305,6 +332,7 @@ class Center:
 
         self.save_groups(groups)
         self.plot_clusters(centroids, groups)
+        return groups
         
 
         
