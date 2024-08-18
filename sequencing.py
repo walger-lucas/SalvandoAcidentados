@@ -1,6 +1,6 @@
 from typing import List
 from vs.abstract_agent import AbstAgent
-from auxiliary import a_star
+from auxiliary import a_star,distance
 from map import Map
 from random import randint
 GRAVITY_TO_WEIGHT = [1,2,3,4] # CONST THAT HAS THE WEIGHT OF IMPORTANCE FOR EACH GRAVITY INT (BIGGER BETTER)
@@ -36,12 +36,12 @@ class _DistanceMatrix:
                     a.append(0.0)
                 else:
                     posf = self.all_victims[self.victims[column][0]][0] #first info of self.victims is id and first info of center.victims is position
-                    _, size = a_star(self.agent,self.map,posf,posi)
+                    size = distance(posi,posf)
                     weighted_size = size/GRAVITY_TO_WEIGHT[self.victims[column][1]]
                     if(max<weighted_size):
                         max = weighted_size
                     sum+=weighted_size
-                    a.append(size)
+                    a.append(-1)
             self.totals.append(sum)
             self.maxes.append(max)
             self.matrix.append(a)
@@ -50,12 +50,37 @@ class _DistanceMatrix:
         gravity_weight = GRAVITY_TO_WEIGHT[self.victims[id_f][1]]
         if(id_f == -1):
             gravity_weight = 1
-        return self.matrix[id_i+1][id_f+1]/gravity_weight
+        return self.get_distance(id_i,id_f)/gravity_weight
     
     def get_distance(self,id_i:int,id_f:int):
         if(id_i ==id_f):
             return 0
+        if (self.matrix[id_i+1][id_f+1]== -1):
+            return self._get_euclidian_distance(id_i,id_f)
+        else:
+            return self.matrix[id_i+1][id_f+1]
+    
+    def _get_real_distance(self,id_i:int,id_f:int):
+        if(id_i ==id_f):
+            return 0
+        if (self.matrix[id_i+1][id_f+1] == -1):
+            posi = self.all_victims[self.victims[id_i][0]][0]
+            posf = self.all_victims[self.victims[id_f][0]][0]
+            _, size = a_star(self.agent,self.map,posf,posi)
+            weighted_size = size/GRAVITY_TO_WEIGHT[self.victims[id_f][1]]
+            self.totals[id_i] = self.totals[id_i] -  distance(posi,posf)/GRAVITY_TO_WEIGHT[self.victims[id_f][1]] + weighted_size
+            if(weighted_size> self.maxes[id_i]):
+                self.maxes[id_i] = weighted_size
+            self.matrix[id_i+1][id_f+1] = size
         return self.matrix[id_i+1][id_f+1]
+
+    
+    def _get_euclidian_distance(self,id_i,id_f):
+        posi = self.all_victims[self.victims[id_i][0]][0]
+        posf = self.all_victims[self.victims[id_f][0]][0]
+        return distance(posi,posf)
+         
+
     
     def get_weight(self,id:int,for_id:int):
         return self.maxes[for_id]-self.get_cost(for_id,id)
@@ -98,22 +123,37 @@ class _DistanceMatrix:
 def sequence(victims: List[tuple[int,int]],agent: AbstAgent,all_victims,map)->List[tuple[int,int]]:
     matrix_dist = _DistanceMatrix(victims,agent,all_victims,map)
     matrix_dist.create_cost_matrix()
+    all_flag = False
+    count = 2*len(victims)
+    path = []
+    while(not all_flag and count>1):
+        count-=1
+        all_flag,path = create_path(matrix_dist,agent)
+    real_path = []
+    id_path = []
+    for i in path:
+        real_path.append(all_victims[victims[i][0]][0])
+        id_path.append(victims[i][0])
+    
+    return real_path
+
+def create_path(matrix_dist:_DistanceMatrix,agent:AbstAgent):
     life = agent.TLIM
     path = []
     last = -1
     all_flag = False
     while(life>matrix_dist.get_distance(last,-1)):
         next_victim = matrix_dist.choose_victim_minimum(last,path)
-        life-= matrix_dist.get_distance(last,next_victim)
-        life-= agent.COST_FIRST_AID
         path.append(next_victim)
-        last = next_victim
         if(next_victim==-1):
+            all_flag = True
             break
+        life-= matrix_dist._get_real_distance(last,next_victim)
+        life-= agent.COST_FIRST_AID
+        
+        last = next_victim
+
     if(path):
         path.pop()
-    real_path = []
-    for i in path:
-        real_path.append(all_victims[victims[i][0]][0])
-    return real_path
-
+    
+    return all_flag, path
