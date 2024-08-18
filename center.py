@@ -27,11 +27,15 @@ class Center:
                 if self.kmeans_printed is False:
                     self.kmeans_printed = True
                     groups =self.kmeans()
+                    paths = []
                     for group in groups:
                         rescuer:Rescuer = self.rescuers.pop()
-                        path = sequence(self.find_gravity(group),rescuer,self.victims,self.map)
+                        path,path_id = sequence(self.find_gravity(group),rescuer,self.victims,self.map)
+                        paths.append(path_id)
                         print(path)
                         rescuer.go_save_victims(self.map,path)
+                    for i in range(len(paths)):
+                        self.save_seq(paths[i],i)
 
     def add_rescuer(self,resc:Rescuer):
         if resc not in self.rescuers:
@@ -111,6 +115,7 @@ class Center:
         plt.xlabel("Pos x")
         plt.ylabel("Pos y")
         plt.title('Clusters')
+        
         
         # Inverte o eixo y
         plt.gca().invert_yaxis()
@@ -299,6 +304,28 @@ class Center:
                         score = vitals_signals_mapped[id][0]
                         label = vitals_signals_mapped[id][1]
                         f.write(f'{id}, {x}, {y}, {score}, {label}\n')
+
+    def save_seq(self, id_path,g_n):
+    #saving the groups in format 𝑖𝑑, 𝑥, 𝑦, gravidade, label de criticidade
+        vitals_signals_mapped = self.mapping_vital_signals()
+        try:
+            os.mkdir(f'seqs_{self.path}')
+        except OSError as _:
+            if os.path.exists(f'seqs_{self.path}'):
+                shutil.rmtree(f'seqs_{self.path}')
+                os.mkdir(f'seqs_{self.path}')
+        with open(f'seqs_{self.path}/seq{g_n+1}.txt', 'w') as f:
+            f.write('id, x, y, grav, label\n')
+            #ordenando groups pelo id da vítima           
+            for j in range(len(id_path)):
+                    id = id_path[j]
+                    x = self.victims[id][0][0]
+                    y = self.victims[id][0][1]
+                    
+                    score = vitals_signals_mapped[id][0]
+                    label = vitals_signals_mapped[id][1]
+                    f.write(f'{id}, {x}, {y}, {score}, {label}\n')
+            f.close()
                 
 
                 

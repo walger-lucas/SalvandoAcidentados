@@ -120,7 +120,7 @@ class _DistanceMatrix:
 
 
 #receives list of tuples (id, gravity_code)
-def sequence(victims: List[tuple[int,int]],agent: AbstAgent,all_victims,map)->List[tuple[int,int]]:
+def sequence(victims: List[tuple[int,int]],agent: AbstAgent,all_victims,map)->tuple[List[tuple[int,int]],List[int]]:
     matrix_dist = _DistanceMatrix(victims,agent,all_victims,map)
     matrix_dist.create_cost_matrix()
     all_flag = False
@@ -135,7 +135,7 @@ def sequence(victims: List[tuple[int,int]],agent: AbstAgent,all_victims,map)->Li
         real_path.append(all_victims[victims[i][0]][0])
         id_path.append(victims[i][0])
     
-    return real_path
+    return real_path, id_path
 
 def create_path(matrix_dist:_DistanceMatrix,agent:AbstAgent):
     life = agent.TLIM

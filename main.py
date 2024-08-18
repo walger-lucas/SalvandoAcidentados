@@ -38,7 +38,7 @@ def main(data_folder_name):
     for i in range(0,max_explorer):
         Explorer(env, explorer_file, i, max_explorer, center)
 
-    max_rescuer = 2
+    max_rescuer = 4
     for i in range(0,max_rescuer):
         center.add_rescuer(Rescuer(env, rescuer_file))
 
@@ -52,8 +52,7 @@ if __name__ == '__main__':
     pass it by the argument line"""
     
     if len(sys.argv) > 1:
-        data_folder_name = sys.argv[1]
-    else:
-        data_folder_name = os.path.join("datasets", path)
+        path = sys.argv[1]
+    data_folder_name = os.path.join("datasets", path)
         
     main(data_folder_name)
