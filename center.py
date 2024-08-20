@@ -9,10 +9,19 @@ from sequencing import sequence
 #possui um mapa de informações que é atualizado a cada passo
 #possui uma função para receber as informações dos exploradores
 
+
+
+
+
+import numpy as np
+import tensorflow as tf
+from tensorflow.keras.models import load_model
+
 class Center:
     def __init__(self):
         self.map = Map()
         self.victims = {}
+        self.victim_id_gravityValue_gravityClass = {}
         self.rescuers = []
         self.explorers_count = 0
         self.kmeans_printed = False
@@ -32,9 +41,11 @@ class Center:
                         rescuer:Rescuer = self.rescuers.pop()
                         path,path_id = sequence(self.find_gravity(group),rescuer,self.victims,self.map)
                         paths.append(path_id)
-                        print(path)
+                        #print(path)
+                        self.save_group(group, groups.index(group)+1)
                         rescuer.go_save_victims(self.map,path)
                     for i in range(len(paths)):
+
                         self.save_seq(paths[i],i)
 
     def add_rescuer(self,resc:Rescuer):
@@ -45,8 +56,24 @@ class Center:
 
     def find_gravity(self,group):
         gravity_group = []
+        model = load_model('classifier_models/model_2.h5')
+
+
         for victim in group:
-            gravity_group.append((victim,0)) #set all to gravity 0
+            #victim: ((x,y), <seq, pSist, pDiast, qPA, pulse, respiratory freq>)
+            #usign qPA, pulse and respiratory freq to calculate the gravity class using Classifier
+            #print(f"Victim {victim}: {self.victims[victim]}")
+
+
+            features = [self.victims[victim][1][3], self.victims[victim][1][4], self.victims[victim][1][5]]
+            features = np.array(features).reshape(1,3)
+            prediction = model.predict(features, verbose=0)
+            gravity_group.append((victim,np.argmax(prediction)))
+            self.victim_id_gravityValue_gravityClass[victim] = {"gravityValue":np.max(prediction), "gravityClass":np.argmax(prediction)}
+
+            # self.victim_id_gravityValue_gravityClass.append((victim,0,0))
+            # gravity_group.append((victim,0))
+        print(f"Gravity group: {gravity_group}")
         return gravity_group
 
 
@@ -197,123 +224,34 @@ class Center:
             total_dist += dist_victims[i]
         return total_dist, max(dist_victims)-min(dist_victims)
     
-    def mapping_vital_signals(self):
-        vital_signals_mapped = {}
-        for k in self.victims:
-            vital_signals = self.victims[k][1]
-            #𝑝𝐷𝑖𝑎𝑠𝑡, 𝑝𝑆𝑖𝑠𝑡, 𝑞𝑃𝐴, 𝑝𝑢𝑙𝑠𝑜, 𝑓𝑅𝑒𝑠
-            #𝑝𝐷𝑖𝑎𝑠𝑡: pressão diastólica
-            #𝑝𝑆𝑖𝑠𝑡: pressão sistólica
-            #𝑞𝑃𝐴: quantidade de sangue que passa por uma área em um determinado tempo
-            #𝑝𝑢𝑙𝑠𝑜: pulso
-            #𝑓𝑅𝑒𝑠: frequência respiratória
-            #making the mapping of the vital signals to a scale of 0 to 100 0 is the worst and 100 is the best
-            vital_signals_value = 0
+   
 
-            #pressão diastólica
-            if vital_signals[1] < 60:
-                vital_signals_value += 0
-            elif vital_signals[1] < 80:
-                vital_signals_value += 25
-            elif vital_signals[1] < 90:
-                vital_signals_value += 50
-            elif vital_signals[1] < 100:
-                vital_signals_value += 75
-            else:
-                vital_signals_value += 100
-
-            #pressão sistólica
-            if vital_signals[2] < 90:
-                vital_signals_value += 0
-            elif vital_signals[2] < 120:
-                vital_signals_value += 25
-            elif vital_signals[2] < 130:
-                vital_signals_value += 50
-            elif vital_signals[2] < 140:
-                vital_signals_value += 75
-            else:
-                vital_signals_value += 100
-
-            #quantidade de sangue que passa por uma área em um determinado tempo
-            if vital_signals[3] < 4:
-                vital_signals_value += 0
-            elif vital_signals[3] < 5:
-                vital_signals_value += 25
-            elif vital_signals[3] < 6:
-                vital_signals_value += 50
-            elif vital_signals[3] < 7:
-                vital_signals_value += 75
-            else:
-                vital_signals_value += 100
-
-            #pulso
-            if vital_signals[4] < 50:
-                vital_signals_value += 25
-            elif vital_signals[4] < 60:
-                vital_signals_value += 0
-            elif vital_signals[4] < 100:
-                vital_signals_value += 50
-            elif vital_signals[4] < 120:
-                vital_signals_value += 75
-            else:
-                vital_signals_value += 100
-
-            #frequência respiratória
-            if vital_signals[5] < 12:
-                vital_signals_value += 100
-            elif vital_signals[5] < 16:
-                vital_signals_value += 75
-            elif vital_signals[5] < 20:
-                vital_signals_value += 50
-            elif vital_signals[5] < 24:
-                vital_signals_value += 25
-            else:
-                vital_signals_value += 0
-
-            
-            if vital_signals_value/5 <=25:
-                vital_signals_mapped[k] = (vital_signals_value/5, 4)
-            elif vital_signals_value/5 <=50:
-                vital_signals_mapped[k] = (vital_signals_value/5, 3)
-            elif vital_signals_value/5 <=75:
-                vital_signals_mapped[k] = (vital_signals_value/5, 2)
-            else:
-                vital_signals_mapped[k] = (vital_signals_value/5, 1)
-        return vital_signals_mapped 
-
-
-    def save_groups(self, groups):
+    def save_group(self, group, n):
     #saving the groups in format 𝑖𝑑, 𝑥, 𝑦, gravidade, label de criticidade
-        vitals_signals_mapped = self.mapping_vital_signals()
         try:
             os.mkdir(f'clusters_{self.path}')
         except OSError as _:
             if os.path.exists(f'clusters_{self.path}'):
-                shutil.rmtree(f'clusters_{self.path}')
-                os.mkdir(f'clusters_{self.path}')
-        for i in range(len(groups)):
-
-            with open(f'clusters_{self.path}/cluster{i+1}.txt', 'w') as f:
-                f.write('id, x, y, grav, label\n')
-                #ordenando groups pelo id da vítima
-                groups[i].sort()             
-                for j in range(len(groups[i])):
-                        x = self.victims[groups[i][j]][0][0]
-                        y = self.victims[groups[i][j]][0][1]
-                        id = groups[i][j]
-                        score = vitals_signals_mapped[id][0]
-                        label = vitals_signals_mapped[id][1]
-                        f.write(f'{id}, {x}, {y}, {score}, {label}\n')
+                print("Directory exists")
+        with open(f'clusters_{self.path}/cluster{n}.txt', 'w') as f:
+            f.write('id, x, y, grav, label\n')
+            #ordenando groups pelo id da vítima
+            group.sort()             
+            for j in range(len(group)):
+                    x = self.victims[group[j]][0][0]
+                    y = self.victims[group[j]][0][1]
+                    id = group[j]
+                    score = self.victim_id_gravityValue_gravityClass[id]["gravityValue"]*100
+                    label = self.victim_id_gravityValue_gravityClass[id]["gravityClass"] + 1
+                    f.write(f'{id}, {x}, {y}, {score}, {label}\n')
 
     def save_seq(self, id_path,g_n):
     #saving the groups in format 𝑖𝑑, 𝑥, 𝑦, gravidade, label de criticidade
-        vitals_signals_mapped = self.mapping_vital_signals()
         try:
             os.mkdir(f'seqs_{self.path}')
         except OSError as _:
             if os.path.exists(f'seqs_{self.path}'):
-                shutil.rmtree(f'seqs_{self.path}')
-                os.mkdir(f'seqs_{self.path}')
+                print("Directory exists")
         with open(f'seqs_{self.path}/seq{g_n+1}.txt', 'w') as f:
             f.write('id, x, y, grav, label\n')
             #ordenando groups pelo id da vítima           
@@ -322,8 +260,8 @@ class Center:
                     x = self.victims[id][0][0]
                     y = self.victims[id][0][1]
                     
-                    score = vitals_signals_mapped[id][0]
-                    label = vitals_signals_mapped[id][1]
+                    score = self.victim_id_gravityValue_gravityClass[id]["gravityValue"]*100
+                    label = self.victim_id_gravityValue_gravityClass[id]["gravityClass"] + 1
                     f.write(f'{id}, {x}, {y}, {score}, {label}\n')
             f.close()
                 
@@ -357,7 +295,6 @@ class Center:
                 centroids = self.update_centroids(centroids, groups)
             total, diff_dist_victims = self.get_max_diff_dist_victims(groups)
 
-        self.save_groups(groups)
         self.plot_clusters(centroids, groups)
         return groups
         

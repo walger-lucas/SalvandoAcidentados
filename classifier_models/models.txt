@@ -38,3 +38,43 @@ model_10.h5:
 Config: {'layers': [256, 128, 64, 32, 16, 8], 'activation': 'relu', 'learning_rate': 0.0005}
 Accuracy: 0.7452
 --------------------------------------
+model_1.h5:
+Config: {'layers': [128, 64], 'activation': 'relu', 'learning_rate': 0.001}
+Accuracy: 0.8827
+--------------------------------------
+model_2.h5:
+Config: {'layers': [256, 128, 64], 'activation': 'relu', 'learning_rate': 0.0005}
+Accuracy: 0.9112
+--------------------------------------
+model_3.h5:
+Config: {'layers': [128, 128, 128], 'activation': 'tanh', 'learning_rate': 0.001}
+Accuracy: 0.8898
+--------------------------------------
+model_4.h5:
+Config: {'layers': [256, 128, 64, 32], 'activation': 'relu', 'learning_rate': 0.0005}
+Accuracy: 0.8130
+--------------------------------------
+model_5.h5:
+Config: {'layers': [512, 256], 'activation': 'relu', 'learning_rate': 0.0001}
+Accuracy: 0.6855
+--------------------------------------
+model_6.h5:
+Config: {'layers': [128, 64, 32], 'activation': 'relu', 'learning_rate': 0.001}
+Accuracy: 0.8503
+--------------------------------------
+model_7.h5:
+Config: {'layers': [256, 128, 64, 32, 16], 'activation': 'relu', 'learning_rate': 0.0005}
+Accuracy: 0.8342
+--------------------------------------
+model_8.h5:
+Config: {'layers': [512, 256, 128], 'activation': 'relu', 'learning_rate': 0.0001}
+Accuracy: 0.7773
+--------------------------------------
+model_9.h5:
+Config: {'layers': [128, 128, 128, 128], 'activation': 'tanh', 'learning_rate': 0.001}
+Accuracy: 0.8170
+--------------------------------------
+model_10.h5:
+Config: {'layers': [256, 128, 64, 32, 16, 8], 'activation': 'relu', 'learning_rate': 0.0005}
+Accuracy: 0.7355
+--------------------------------------

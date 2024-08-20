@@ -82,8 +82,6 @@ def create_model(layers, activation, learning_rate):
 
 # Função para executar treinamento com validação cruzada
 def train_and_evaluate(X, y, model_configs, k_folds=5):
-
-    
     results = []
     for i, config in enumerate(model_configs):
         print(f'Treinando modelo {i+1} com configuração: {config}')
@@ -121,7 +119,7 @@ with open(file_path, 'r') as file:
     for line in file:
         values = line.strip().split(',')
         features = list(map(float, values[3:6]))
-        label = int(values[7]) - 1
+        label = int(values[7]) - 1  # Assumindo que os labels no arquivo vão de 1 a 4
         X.append(features)
         y.append(label)
 
@@ -149,3 +147,4 @@ results = train_and_evaluate(X, y_train, model_configs, k_folds=5)
 # Exibir os resultados
 for i, (config, accuracy) in enumerate(results):
     print(f'Modelo {i+1} - Configuração: {config} - Acurácia Média: {accuracy:.4f}')
+

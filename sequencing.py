@@ -3,7 +3,7 @@ from vs.abstract_agent import AbstAgent
 from auxiliary import a_star,distance
 from map import Map
 from random import randint
-GRAVITY_TO_WEIGHT = [1,2,3,4] # CONST THAT HAS THE WEIGHT OF IMPORTANCE FOR EACH GRAVITY INT (BIGGER BETTER)
+GRAVITY_TO_WEIGHT = [4, 3, 2, 1] # CONST THAT HAS THE WEIGHT OF IMPORTANCE FOR EACH GRAVITY INT (BIGGER BETTER)
 
 class _DistanceMatrix:
     def __init__(self,victims: List[tuple[int,int]],agent: AbstAgent,all_victims,map):

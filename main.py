@@ -11,7 +11,7 @@ from rescuer import Rescuer
 
 from center import Center
 
-path = "data_300v_90x90"
+path = "data_42v_20x20"
 
 
 
