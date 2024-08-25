@@ -11,6 +11,7 @@ google-pasta==0.2.0
 grpcio==1.65.5
 h5py==3.11.0
 idna==3.7
+ipykernel==6.29.5
 joblib==1.4.2
 keras==3.5.0
 kiwisolver==1.4.5
@@ -26,6 +27,7 @@ numpy==1.26.4
 opt-einsum==3.3.0
 optree==0.12.1
 packaging==24.0
+pandas==2.2.2
 pillow==10.3.0
 protobuf==4.25.4
 pygame==2.5.2
@@ -36,6 +38,7 @@ requests==2.32.3
 rich==13.7.1
 scikit-learn==1.5.1
 scipy==1.14.0
+seaborn==0.13.2
 setuptools==73.0.0
 six==1.16.0
 tensorboard==2.17.1
