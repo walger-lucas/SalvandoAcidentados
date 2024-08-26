@@ -89,7 +89,7 @@ class _DistanceMatrix:
         not_sum = 0
         for i in not_in:
             not_sum += self.get_weight(i,id)
-        chosen =randint(0,self.maxes[id]*len(self.victims) -self.totals[id]-not_sum)
+        chosen =randint(0,int(self.maxes[id]*len(self.victims) -self.totals[id]-not_sum))
         id_next = -1
         while(chosen>0):
             id_next+=1
@@ -126,9 +126,22 @@ def sequence(victims: List[tuple[int,int]],agent: AbstAgent,all_victims,map)->tu
     all_flag = False
     count = 2*len(victims)
     path = []
+    
     while(not all_flag and count>1):
         count-=1
         all_flag,path = create_path(matrix_dist,agent)
+    
+    parents = [path[:] for x in range(200)]
+    
+
+    for i in range(100):
+        parents = generation(matrix_dist,agent,parents)
+
+    max = 0
+    id = 0
+    parents.sort(key= lambda p: evaluate(p,matrix_dist))
+    path = parents[0][:]
+    
     real_path = []
     id_path = []
     for i in path:
@@ -136,6 +149,87 @@ def sequence(victims: List[tuple[int,int]],agent: AbstAgent,all_victims,map)->tu
         id_path.append(victims[i][0])
     
     return real_path, id_path
+
+def evaluate(path,matrix_dist:_DistanceMatrix)->int:
+    sum:int = 0
+    for victim in path:
+        id, grav = matrix_dist.victims[victim]
+        sum+= GRAVITY_TO_WEIGHT[grav]
+    return sum
+
+def is_valid(path:List[int],matrix_dist:_DistanceMatrix):
+    path_copy = path[:]
+    while(path):
+        victim = path_copy.pop()
+        if victim in path:
+            return False
+    return True
+
+#ox_crossover
+def procreate(father:List[int],mother:List[int],matrix_dist:_DistanceMatrix):
+    father_main = randint(0,1)
+    main_parent = mother
+    other_parent = father
+    if(father_main):
+        main_parent = father
+        other_parent = mother
+
+    cut = randint(0,len(main_parent)-1)
+    child = main_parent[:cut]
+    for victim in other_parent:
+        if(victim not in child):
+            child.append(victim)
+    return child
+    
+
+def mutate_path(path:List[int],matrix_dist:_DistanceMatrix,chance:float):
+    for victim in path:
+        mutation_possibility = randint(0,10000)/10000
+        if(mutation_possibility<=chance):
+            change_with = randint(0,len(matrix_dist.victims)-1)
+            if(change_with in path):
+                index =path.index(change_with)
+                aux = victim
+                path[path.index(victim)] = change_with
+                path[index] = aux
+            else:
+                path[path.index(victim)] = change_with
+    return path
+
+def generation(matrix_dist:_DistanceMatrix,agent:AbstAgent,children:List[List[int]]):
+    roleta = []
+    sum = 0
+    for child in children:
+        if(possible(child.copy(),matrix_dist,agent)):
+            sum+= evaluate(child,matrix_dist)
+        else:
+            sum+=1
+        roleta.append(sum)
+    
+    parents = []
+    for i in range(len(children)*2):
+        random = randint(0, roleta[-1])
+        for bucket in roleta:
+            
+            
+            if random <= bucket:
+                parents.append(children[roleta.index(bucket)].copy())
+                break
+    new_children = []
+    for i in range(0,len(parents),2):
+        new_child = procreate(parents[i],parents[i+1],matrix_dist)
+        new_child = mutate_path(new_child,matrix_dist,0.005)
+        new_c = new_child[:]
+        if(possible(new_child,matrix_dist,agent)):
+            new_children.append(new_c)
+        else:
+            new_children.append(parents[i])
+    return new_children
+            
+        
+
+
+
 
 def create_path(matrix_dist:_DistanceMatrix,agent:AbstAgent):
     life = agent.TLIM
@@ -157,3 +251,15 @@ def create_path(matrix_dist:_DistanceMatrix,agent:AbstAgent):
         path.pop()
     
     return all_flag, path
+
+def possible(path,matrix_dist:_DistanceMatrix,agent:AbstAgent):
+    life = agent.TLIM
+    last = -1
+    all_flag = False
+    while(path):
+        next_victim = path.pop()
+        life-= matrix_dist._get_real_distance(last,next_victim)
+        life-= agent.COST_FIRST_AID
+        last = next_victim
+    
+    return life>0
