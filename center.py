@@ -15,6 +15,7 @@ from sequencing import sequence
 
 import numpy as np
 import tensorflow as tf
+import joblib
 from tensorflow.keras.models import load_model
 
 class Center:
@@ -76,9 +77,29 @@ class Center:
         print(f"Gravity group: {gravity_group}")
         return gravity_group
 
+    def find_gravity_dt(self, group):
+        gravity_group = []
+        model = joblib.load('dt_regressor_models/best_regressor.pkl')
 
-
-            
+        for victim in group:
+            features = [self.victims[victim][1][3], self.victims[victim][1][4], self.victims[victim][1][5]]
+            features = np.array(features).reshape(1,3)
+            prediction = model.predict(features)[0]
+            victim_gravity_class = self.gravity_classifier(prediction)
+            gravity_group.append((victim, victim_gravity_class))
+            self.victim_id_gravityValue_gravityClass[victim] = {"gravityValue":prediction/100, "gravityClass":victim_gravity_class}
+        print(f"Gravity group: {gravity_group}")
+        return gravity_group
+    
+    def gravity_classifier(self, value):
+        if value <= 25.0:
+            return 0
+        elif 25.0 < value <= 50.0:
+            return 1
+        elif 50.0 < value <= 75.0:
+            return 2
+        elif 75.0 < value <= 100.0:
+            return 3        
 
     def _is_done(self):
         if self.explorers_count == 0:
