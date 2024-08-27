@@ -1,0 +1,6 @@
+Config: DecisionTreeRegressor(criterion='poisson', max_depth=16, min_samples_leaf=8,
+                      random_state=42)
+MAE com dados de 800 vítimas: 2.102206
+MSE com dados de 800 vítimas: 11.301262
+RMSE com dados de 800 vítimas:3.361735
+R² com dados de 800 vítimas: 0.956811
